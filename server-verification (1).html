@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Server Verification</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0c10;
+      --surface: #111520;
+      --border: #1e2540;
+      --accent: #5865f2;
+      --accent2: #eb459e;
+      --gold: #faa61a;
+      --green: #57f287;
+      --red: #ed4245;
+      --text: #e8ecf4;
+      --muted: #7e8eb0;
+      --glow: rgba(88,101,242,0.35);
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Exo 2', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ANIMATED BACKGROUND */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 20% 10%, rgba(88,101,242,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 80% 90%, rgba(235,69,158,0.08) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Grid overlay */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page { position: relative; z-index: 1; }
+
+    /* ========== PAGES ========== */
+    .screen { display: none; min-height: 100vh; padding: 40px 16px 60px; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+    /* ========== HEADER ========== */
+    .top-bar {
+      width: 100%; max-width: 860px;
+      display: flex; align-items: center; gap: 14px;
+      padding-bottom: 36px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 40px;
+      animation: slideDown 0.6s cubic-bezier(.16,1,.3,1) both;
+    }
+    .top-bar .logo-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 0 24px var(--glow);
+      flex-shrink: 0;
+    }
+    .top-bar h1 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .top-bar h1 span { color: var(--accent); }
+    .badge {
+      margin-left: auto;
+      background: rgba(88,101,242,0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    /* ========== SECTION TITLE ========== */
+    .section-title {
+      width: 100%; max-width: 860px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(1.6rem, 5vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 8px;
+      animation: fadeUp 0.5s 0.2s both;
+    }
+    .section-title .highlight { color: var(--accent); }
+    .section-subtitle {
+      color: var(--muted); font-size: 0.9rem;
+      text-align: center; margin-bottom: 40px;
+      animation: fadeUp 0.5s 0.3s both;
+      letter-spacing: 0.5px;
+    }
+
+    /* ========== TERMS CARD ========== */
+    .terms-wrapper {
+      width: 100%; max-width: 860px;
+      display: flex; flex-direction: column; gap: 16px;
+      animation: fadeUp 0.5s 0.4s both;
+    }
+
+    .term-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      display: flex; gap: 20px; align-items: flex-start;
+      transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .term-card::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      border-radius: 3px 0 0 3px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .term-card:hover {
+      border-color: var(--accent);
+      transform: translateX(4px);
+      box-shadow: 0 4px 24px rgba(88,101,242,0.15);
+    }
+    .term-card:hover::before { opacity: 1; }
+
+    .term-icon {
+      width: 44px; height: 44px; flex-shrink: 0;
+      background: rgba(88,101,242,0.12);
+      border: 1px solid rgba(88,101,242,0.25);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: var(--accent);
+      transition: background 0.25s, color 0.25s;
+    }
+    .term-card:hover .term-icon {
+      background: rgba(88,101,242,0.22);
+      color: #fff;
+    }
+    .term-icon.danger { background: rgba(237,66,69,0.1); border-color: rgba(237,66,69,0.25); color: var(--red); }
+    .term-icon.gold { background: rgba(250,166,26,0.1); border-color: rgba(250,166,26,0.25); color: var(--gold); }
+    .term-icon.green { background: rgba(87,242,135,0.1); border-color: rgba(87,242,135,0.25); color: var(--green); }
+    .term-card:hover .term-icon.danger { background: rgba(237,66,69,0.2); }
+    .term-card:hover .term-icon.gold { background: rgba(250,166,26,0.2); }
+    .term-card:hover .term-icon.green { background: rgba(87,242,135,0.2); }
+
+    .term-body h3 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.05rem; font-weight: 700;
+      letter-spacing: 0.5px; margin-bottom: 4px;
+    }
+    .term-body p { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+
+    /* Stagger animation for cards */
+    .term-card:nth-child(1) { animation: fadeUp 0.4s 0.45s both; }
+    .term-card:nth-child(2) { animation: fadeUp 0.4s 0.52s both; }
+    .term-card:nth-child(3) { animation: fadeUp 0.4s 0.59s both; }
+    .term-card:nth-child(4) { animation: fadeUp 0.4s 0.66s both; }
+    .term-card:nth-child(5) { animation: fadeUp 0.4s 0.73s both; }
+    .term-card:nth-child(6) { animation: fadeUp 0.4s 0.80s both; }
+    .term-card:nth-child(7) { animation: fadeUp 0.4s 0.87s both; }
+    .term-card:nth-child(8) { animation: fadeUp 0.4s 0.94s both; }
+
+    /* ========== CHECKBOX ========== */
+    .checkbox-row {
+      width: 100%; max-width: 860px;
+      display: flex; align-items: center; gap: 14px;
+      margin-top: 32px;
+      padding: 20px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border-color 0.25s;
+      animation: fadeUp 0.5s 1s both;
+    }
+    .checkbox-row:hover { border-color: var(--accent); }
+    .checkbox-row input[type="checkbox"] { display: none; }
+    .custom-check {
+      width: 22px; height: 22px; flex-shrink: 0;
+      border: 2px solid var(--muted);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.2s, background 0.2s;
+      font-size: 13px; color: transparent;
+    }
+    .checkbox-row.checked .custom-check {
+      border-color: var(--green);
+      background: rgba(87,242,135,0.15);
+      color: var(--green);
+    }
+    .checkbox-row label {
+      font-size: 0.9rem; color: var(--muted);
+      cursor: pointer; line-height: 1.4;
+      pointer-events: none;
+    }
+    .checkbox-row.checked label { color: var(--text); }
+
+    /* ========== CTA BUTTON ========== */
+    .btn-wrap {
+      width: 100%; max-width: 860px;
+      margin-top: 20px;
+      animation: fadeUp 0.5s 1.1s both;
+    }
+    .btn {
+      width: 100%;
+      padding: 18px;
+      border: none; border-radius: 12px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.1rem; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.25s;
+      position: relative; overflow: hidden;
+    }
+    .btn:disabled {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      box-shadow: 0 4px 28px rgba(88,101,242,0.4);
+    }
+    .btn.active:hover { transform: translateY(-2px); box-shadow: 0 8px 36px rgba(88,101,242,0.55); }
+    .btn.active:active { transform: translateY(0); }
+    .btn.active::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%);
+      transform: translateX(-100%);
+      transition: transform 0.5s ease;
+    }
+    .btn.active:hover::after { transform: translateX(100%); }
+
+    /* ========== FORM PAGE ========== */
+    .form-card {
+      width: 100%; max-width: 620px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 36px 32px;
+      animation: fadeUp 0.5s 0.2s both;
+    }
+
+    .form-group { margin-bottom: 22px; }
+    .form-group label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.8rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 8px;
+    }
+    .form-group label i { color: var(--accent); }
+
+    .form-group input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 16px;
+      color: var(--text);
+      font-family: 'Exo 2', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(88,101,242,0.15);
+    }
+    .form-group input::placeholder { color: #3a4260; }
+
+    .divider {
+      height: 1px; background: var(--border);
+      margin: 28px 0;
+    }
+
+    /* ========== SUCCESS PAGE ========== */
+    .success-content {
+      text-align: center;
+      animation: fadeUp 0.6s 0.1s both;
+    }
+    .success-icon {
+      width: 90px; height: 90px;
+      background: rgba(87,242,135,0.12);
+      border: 2px solid var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px; color: var(--green);
+      margin: 0 auto 28px;
+      animation: popIn 0.5s 0.3s cubic-bezier(.175,.885,.32,1.275) both;
+      box-shadow: 0 0 40px rgba(87,242,135,0.2);
+    }
+    .success-content h2 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 2rem; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .success-content p { color: var(--muted); max-width: 400px; margin: 0 auto; line-height: 1.6; }
+
+    /* ========== LOADING SPINNER ========== */
+    .spinner-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 999;
+      background: rgba(10,12,16,0.8);
+      backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+    }
+    .spinner-overlay.active { display: flex; }
+    .spinner {
+      width: 46px; height: 46px;
+      border: 3px solid rgba(88,101,242,0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .spinner-overlay p {
+      font-family: 'Rajdhani', sans-serif;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--muted); font-size: 0.85rem;
+    }
+
+    /* ========== ANIMATIONS ========== */
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.4); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(88,101,242,0.4); }
+      50% { box-shadow: 0 0 0 5px rgba(88,101,242,0); }
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 560px) {
+      .top-bar { flex-wrap: wrap; }
+      .badge { margin-left: 0; }
+      .form-card { padding: 24px 18px; }
+      .term-card { padding: 16px; }
+      .term-icon { width: 38px; height: 38px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ========== SCREEN 1: AGB ========== -->
+  <div class="screen active" id="screen-agb">
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo-icon"><i class="fa-brands fa-discord"></i></div>
+      <h1>Server <span>Verif</span>ication</h1>
+      <div class="badge"><i class="fa-solid fa-shield-halved" style="margin-right:5px"></i> Offiziell</div>
+    </div>
+
+    <!-- Title -->
+    <div class="section-title"><span class="highlight">Nutzungsbedingungen</span> &amp; AGB</div>
+    <div class="section-subtitle">Lies dir alle Punkte sorgfältig durch, bevor du zustimmst.</div>
+
+    <!-- Terms -->
+    <div class="terms-wrapper">
+
+      <div class="term-card">
+        <div class="term-icon"><i class="fa-solid fa-file-contract"></i></div>
+        <div class="term-body">
+          <h3>Anforderungen der Server Verification</h3>
+          <p>Du akzeptierst alle aktuellen und zukünftigen Anforderungen der Server Verification. Diese Regeln sind verbindlich und müssen vollständig eingehalten werden.</p>
+        </div>
+      </div>
+
+      <div class="term-card">
+        <div class="term-icon danger"><i class="fa-solid fa-ban"></i></div>
+        <div class="term-body">
+          <h3>Serverban bei unangemessenen Inhalten</h3>
+          <p>Du akzeptierst, dass dein Server dauerhaft gebannt wird, wenn du unangemessene, illegale oder regelwidrige Inhalte erstellst oder verbreitest.</p>
+        </div>
+      </div>
+
+      <div class="term-card">
+        <div class="term-icon gold"><i class="fa-solid fa-user-shield"></i></div>
+        <div class="term-body">
+          <h3>Keine Bau-Rechte für Fremde</h3>
+          <p>Du akzeptierst, dass du keinen fremden Personen („Randoms") Bau-Rechte oder administrative Berechtigungen auf deinem Server erteilst.</p>
+        </div>
+      </div>
+
+      <div class="term-card">
+        <div class="term-icon"><i class="fa-brands fa-discord"></i></div>
+        <div class="term-body">
+          <h3>Professioneller Discord-Auftritt</h3>
+          <p>Du akzeptierst, dass dein Discord-Server professionell gestaltet ist – mit klaren Regeln, einem einheitlichen Design und einer strukturierten Kanalübersicht.</p>
+        </div>
+      </div>
+
+      <div class="term-card">
+        <div class="term-icon green"><i class="fa-solid fa-handshake"></i></div>
+        <div class="term-body">
+          <h3>Freundliches Teammitglied</h3>
+          <p>Du akzeptierst, dass jedes Teammitglied deines Servers stets freundlich, respektvoll und hilfsbereit gegenüber der Community auftritt.</p>
+        </div>
+      </div>
+
+      <div class="term-card">
+        <div class="term-icon green"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="term-body">
+          <h3>Aktiver Server</h3>
+          <p>Du akzeptierst, dass dein Server regelmäßig aktiv ist und die Community kontinuierlich betreut wird. Inaktive Server verstoßen gegen diese Bedingungen.</p>
+        </div>
+      </div>
+
+      <div class="term-card">
+        <div class="term-icon danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="term-body">
+          <h3>Null-Fehler-Toleranz</h3>
+          <p>Du akzeptierst, dass du alle Regeln fehlerfrei einhältst. Fehler, auch unbeabsichtigte, können zur Sanktionierung deines Servers führen.</p>
+        </div>
+      </div>
+
+      <div class="term-card">
+        <div class="term-icon danger"><i class="fa-solid fa-gavel"></i></div>
+        <div class="term-body">
+          <h3>Sofortiger Ban bei Verstößen</h3>
+          <p>Du akzeptierst, dass selbst bei kleineren Regelverstößen dein Server ohne Vorwarnung direkt und dauerhaft gebannt werden kann.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Checkbox -->
+    <div class="checkbox-row" id="agb-check-row" onclick="toggleCheck()">
+      <input type="checkbox" id="agb-check" />
+      <div class="custom-check" id="custom-check"><i class="fa-solid fa-check"></i></div>
+      <label for="agb-check">Ich akzeptiere alle oben genannten Nutzungsbedingungen und bin mir der Konsequenzen bewusst.</label>
+    </div>
+
+    <!-- Button -->
+    <div class="btn-wrap">
+      <button class="btn" id="agb-btn" disabled onclick="goToForm()">
+        <i class="fa-solid fa-shield-check" style="margin-right:8px"></i>Zustimmen &amp; Weiter
+      </button>
+    </div>
+
+  </div><!-- /screen-agb -->
+
+  <!-- ========== SCREEN 2: FORM ========== -->
+  <div class="screen" id="screen-form">
+
+    <div class="top-bar">
+      <div class="logo-icon"><i class="fa-brands fa-discord"></i></div>
+      <h1>Server <span>Anmeldung</span></h1>
+      <div class="badge"><i class="fa-solid fa-lock" style="margin-right:5px"></i> Sicher</div>
+    </div>
+
+    <div class="section-title">Server <span class="highlight">Anmelden</span></div>
+    <div class="section-subtitle">Fülle alle Felder vollständig und korrekt aus.</div>
+
+    <div class="form-card">
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-user"></i> Vorname</label>
+        <input type="text" id="f-vorname" placeholder="Dein Vorname" autocomplete="off" />
+      </div>
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-gamepad"></i> Roblox Username</label>
+        <input type="text" id="f-roblox" placeholder="Dein Roblox Benutzername" autocomplete="off" />
+      </div>
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-server"></i> Ingame Server</label>
+        <input type="text" id="f-server" placeholder="Name deines Ingame Servers" autocomplete="off" />
+      </div>
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-calendar-days"></i> Alter</label>
+        <input type="number" id="f-alter" placeholder="Dein Alter" min="1" max="99" autocomplete="off" />
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="checkbox-row" id="form-check-row" onclick="toggleFormCheck()" style="margin-top:0">
+        <input type="checkbox" id="form-check" />
+        <div class="custom-check" id="form-custom-check"><i class="fa-solid fa-check"></i></div>
+        <label for="form-check">Wenn du dies akzeptierst, hast du allem zugestimmt und dein Server wird mit diesen Daten angemeldet!</label>
+      </div>
+
+      <div class="btn-wrap" style="margin-top:16px">
+        <button class="btn" id="form-btn" disabled onclick="submitForm()">
+          <i class="fa-solid fa-paper-plane" style="margin-right:8px"></i>Anmelden
+        </button>
+      </div>
+
+    </div>
+  </div><!-- /screen-form -->
+
+  <!-- ========== SCREEN 3: SUCCESS ========== -->
+  <div class="screen" id="screen-success">
+    <div class="success-content">
+      <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <h2>Anmeldung <span style="color:var(--green)">Erfolgreich!</span></h2>
+      <p>Ihr Server wird in Kürze verifiziert. Unser Team prüft eure Angaben und meldet sich so schnell wie möglich bei euch.</p>
+    </div>
+  </div><!-- /screen-success -->
+
+  <!-- Spinner -->
+  <div class="spinner-overlay" id="spinner">
+    <div class="spinner"></div>
+    <p>Wird gesendet…</p>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  // ── AGB Checkbox ──────────────────────────────────────────────
+  let agbChecked = false;
+  function toggleCheck() {
+    agbChecked = !agbChecked;
+    const row = document.getElementById('agb-check-row');
+    const check = document.getElementById('custom-check');
+    const btn = document.getElementById('agb-btn');
+    row.classList.toggle('checked', agbChecked);
+    check.style.color = agbChecked ? 'var(--green)' : 'transparent';
+    btn.disabled = !agbChecked;
+    btn.className = agbChecked ? 'btn active' : 'btn';
+  }
+
+  // ── Page Switch ───────────────────────────────────────────────
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function goToForm() {
+    if (!agbChecked) return;
+    showScreen('screen-form');
+  }
+
+  // ── Form Checkbox ─────────────────────────────────────────────
+  let formChecked = false;
+  function toggleFormCheck() {
+    formChecked = !formChecked;
+    const row = document.getElementById('form-check-row');
+    const check = document.getElementById('form-custom-check');
+    const btn = document.getElementById('form-btn');
+    row.classList.toggle('checked', formChecked);
+    check.style.color = formChecked ? 'var(--green)' : 'transparent';
+    btn.disabled = !formChecked;
+    btn.className = formChecked ? 'btn active' : 'btn';
+  }
+
+  // ── Submit ────────────────────────────────────────────────────
+  async function submitForm() {
+    const vorname = document.getElementById('f-vorname').value.trim();
+    const roblox  = document.getElementById('f-roblox').value.trim();
+    const server  = document.getElementById('f-server').value.trim();
+    const alter   = document.getElementById('f-alter').value.trim();
+
+    if (!vorname || !roblox || !server || !alter) {
+      alert('Bitte fülle alle Felder aus!');
+      return;
+    }
+
+    const spinner = document.getElementById('spinner');
+    spinner.classList.add('active');
+
+    const embed = {
+      title: '🛡️ Neue Server Anmeldung',
+      color: 0x5865f2,
+      fields: [
+        { name: '👤 Vorname',         value: vorname, inline: true },
+        { name: '🎮 Roblox Username', value: roblox,  inline: true },
+        { name: '📋 Servername',      value: server,  inline: false },
+        { name: '🎂 Alter',           value: alter,   inline: true },
+        { name: '✅ AGB akzeptiert',  value: 'Ja – vollständig zugestimmt', inline: true },
+      ],
+      footer: { text: 'Server Verification System' },
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      const res = await fetch(
+        'https://discord.com/api/webhooks/1484240659572592906/YA_2m-RPWe1ubEn-0GQoECT4XcHxnplDcccXyLhp1bMtvfLQZJxFNDupYXODAIh1ff5p',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ embeds: [embed] }),
+        }
+      );
+      if (res.ok || res.status === 204) {
+        spinner.classList.remove('active');
+        showScreen('screen-success');
+      } else {
+        throw new Error('Webhook error ' + res.status);
+      }
+    } catch (err) {
+      spinner.classList.remove('active');
+      alert('Fehler beim Senden. Bitte versuche es erneut.');
+    }
+  }
+</script>
+</body>
+</html>
